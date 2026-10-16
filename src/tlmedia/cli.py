@@ -1,6 +1,8 @@
 """`tlm` command line.
 
+  tlm setup                guided first-time setup (recommended)
   tlm init                 create config.toml and open it
+  tlm config ...           show/set config, import Google key file, save TikTok keys
   tlm auth google|tiktok   one-time browser sign-in
   tlm doctor               check ffmpeg, credentials, sign-ins
   tlm serve                run the MCP server (Claude Desktop starts this)
@@ -103,6 +105,49 @@ def cmd_status(a):
     _print([jobs.describe(r) for r in rows])
 
 
+def cmd_setup(_):
+    from .setup_wizard import wizard
+    wizard()
+
+
+def _clipboard() -> str:
+    if sys.platform == "win32":
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", "Get-Clipboard"],
+                             capture_output=True, text=True, creationflags=0x08000000)
+    elif sys.platform == "darwin":
+        out = subprocess.run(["pbpaste"], capture_output=True, text=True)
+    else:
+        out = subprocess.run(["xclip", "-o", "-selection", "clipboard"], capture_output=True, text=True)
+    return out.stdout.strip()
+
+
+def cmd_config(a):
+    from . import setup_wizard as sw
+    if a.action == "show":
+        _print(sw.show_config())
+    elif a.action == "set":
+        section, _, key = a.key.partition(".")
+        if not key:
+            sys.exit("Use SECTION.KEY, e.g. tiktok.default_mode")
+        sw.set_value(section, key, sw._coerce(a.value))
+        print(f"Saved {a.key}")
+    elif a.action == "import-google":
+        _print(sw.import_google_json(Path(a.key) if a.key else None))
+    elif a.action == "tiktok-keys":
+        # Secret comes from the clipboard so it never shows up in a chat transcript.
+        key = a.key
+        secret = _clipboard() if a.value in (None, "-") else a.value
+        if not key or not secret:
+            sys.exit("Usage: tlm config tiktok-keys CLIENT_KEY   (with the secret copied to clipboard)")
+        ok, msg = sw.check_tiktok_keys(key, secret)
+        print(msg)
+        if not ok:
+            sys.exit(1)
+        sw.set_value("tiktok", "client_key", key)
+        sw.set_value("tiktok", "client_secret", secret)
+        print("Saved TikTok client key and secret.")
+
+
 def cmd_browser_upload(a):
     from .browser import run_upload
     run_upload(Path(a.video), a.caption)
@@ -138,7 +183,14 @@ def cmd_claude_config(a):
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="tlm", description="Tiny Learners Media uploader")
     sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("setup").set_defaults(fn=cmd_setup)
     sub.add_parser("init").set_defaults(fn=cmd_init)
+    p = sub.add_parser("config")
+    p.add_argument("action", choices=["show", "set", "import-google", "tiktok-keys"])
+    p.add_argument("key", nargs="?", help="set: SECTION.KEY | tiktok-keys: CLIENT_KEY | "
+                                           "import-google: path to client_secret JSON")
+    p.add_argument("value", nargs="?")
+    p.set_defaults(fn=cmd_config)
     p = sub.add_parser("auth")
     p.add_argument("provider", choices=["google", "tiktok"])
     p.set_defaults(fn=cmd_auth)

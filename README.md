@@ -21,22 +21,30 @@ Why this works, and every alternative that was considered: [docs/large-file-stra
 
 ## Install (Windows 10/11)
 
-1. Download or clone this repo, e.g. to `C:\tiny-learners-media`.
-2. In PowerShell:
-   ```powershell
-   cd C:\tiny-learners-media
-   powershell -ExecutionPolicy Bypass -File scripts\setup.ps1            # add -WithBrowser for the TikTok Studio fallback
-   ```
-   This installs uv, ffmpeg and the `tlm` app, opens `config.toml` for your credentials, registers the server with Claude Desktop, and adds a scheduled task.
-3. Do the one-time platform setup below, paste the keys into `config.toml`, then run:
-   ```powershell
-   tlm auth google
-   tlm auth tiktok
-   tlm doctor
-   ```
-4. Restart Claude Desktop. You should see the **tiny-learners-media** tools.
+### Easiest: let Claude do it
+On the PC, open Claude Desktop's **Code** tab (or run `claude remote-control` in this
+folder and drive it from your phone), with Claude in Chrome enabled, and say:
 
-## One-time platform setup
+> **"Set up the video posting app for me."**
+
+The `setup-video-poster` skill in this repo installs everything and clicks through Google
+Cloud and the TikTok developer site in Chrome. It stops only for you to **sign in**, **click
+Allow**, and **approve terms**. Secrets go from file or clipboard straight into the
+config, never through the chat.
+
+### Or do it yourself with the guided wizard
+```powershell
+cd C:\tiny-learners-media
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1     # add -WithBrowser for the TikTok Studio fallback
+```
+This installs uv, ffmpeg, the `tlm` app and the scheduled task, then starts `tlm setup`.
+The wizard opens each Google and TikTok page, tells you the one thing to click, picks up
+the Google key file from your Downloads, checks the TikTok keys, signs you in, and
+registers the app with Claude Desktop. Restart Claude Desktop at the end.
+
+Useful afterwards: `tlm doctor`, `tlm config show`, `tlm auth google|tiktok`.
+
+## One-time platform setup (what the wizard and skill do)
 
 ### Google (YouTube + Drive)
 1. Go to <https://console.cloud.google.com> → create a project (e.g. "Tiny Learners Media").

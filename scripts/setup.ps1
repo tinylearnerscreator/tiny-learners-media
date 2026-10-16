@@ -5,10 +5,10 @@
 .DESCRIPTION
   1. Installs uv (Python manager) and ffmpeg (via winget) if missing
   2. Installs the `tlm` app (Python is downloaded automatically by uv)
-  3. Creates and opens config.toml for your Google / TikTok app credentials
-  4. Registers the MCP server in Claude Desktop
-  5. Registers a scheduled task that finishes scheduled and interrupted uploads
+  3. Registers a scheduled task that finishes scheduled and interrupted uploads
      every 5 minutes even when Claude is closed
+  4. Starts the guided `tlm setup` wizard (Google + TikTok keys, sign-in, Claude Desktop)
+     -Unattended skips the wizard (used when Claude runs this script for you)
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
@@ -16,7 +16,8 @@
 #>
 param(
     [switch]$WithBrowser,
-    [switch]$NoTask
+    [switch]$NoTask,
+    [switch]$Unattended
 )
 $ErrorActionPreference = "Stop"
 $Repo = Split-Path -Parent $PSScriptRoot
@@ -58,15 +59,7 @@ $Tlm = Join-Path $BinDir "tlm.exe"
 $Tlmw = Join-Path $BinDir "tlmw.exe"
 $env:Path = "$BinDir;$env:Path"
 
-# 4. config ---------------------------------------------------------------------------
-& $Tlm init
-Write-Host "Fill in config.toml (it just opened in Notepad), save it, then press Enter here."
-Read-Host | Out-Null
-
-# 5. Claude Desktop ---------------------------------------------------------------
-& $Tlm claude-config
-
-# 6. background worker ----------------------------------------------------------
+# 4. background worker ----------------------------------------------------------
 if (-not $NoTask) {
     $name = "TinyLearnersMedia Worker"
     $action = New-ScheduledTaskAction -Execute $Tlmw -Argument "worker"
@@ -86,8 +79,10 @@ if (-not $NoTask) {
     Write-Host "Scheduled task '$name' registered (runs every 5 minutes)."
 }
 
-Write-Host "`nNext steps:" -ForegroundColor Green
-Write-Host "  tlm auth google     # sign in to YouTube + Drive (browser opens)"
-Write-Host "  tlm auth tiktok     # sign in to TikTok"
-Write-Host "  tlm doctor          # check everything"
-Write-Host "  Restart Claude Desktop, then ask Claude: 'post G:\My Drive\...\ep12.mp4 to YouTube and TikTok'"
+# 5. credentials, sign-in, Claude Desktop ---------------------------------------
+& $Tlm claude-config
+if ($Unattended) {
+    Write-Host "`nInstalled. Remaining: Google/TikTok keys + sign-in (tlm setup)." -ForegroundColor Green
+} else {
+    & $Tlm setup
+}
