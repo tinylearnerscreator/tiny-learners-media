@@ -63,6 +63,8 @@ Useful afterwards: `tlm doctor`, `tlm config show`, `tlm auth google|tiktok`.
 
 ## Using it with Claude
 
+Step-by-step guide: [docs/posting-videos.md](docs/posting-videos.md).
+
 Things to say:
 - "What videos are in my Drive folder `https://drive.google.com/drive/folders/...`?"
 - "Check `G:\My Drive\Tiny Learners\ep12.mp4` for YouTube and TikTok."
