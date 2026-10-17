@@ -74,6 +74,22 @@ Things to say:
 
 MCP tools: `check_setup`, `inspect_video`, `list_drive_videos`, `draft_post`, `update_draft`, `approve_post`, `post_status`, `list_posts`, `cancel_post`, `retry_post`, `tiktok_account_info`, `youtube_playlists`, `open_in_tiktok_studio`.
 
+## Video pipeline integration (test skill)
+
+`.claude/skills/kids-video-pipeline-autopost/` is a **separately maintained test copy** of the
+`kids-video-pipeline` skill. It's identical except that publishing goes through this app: the full-quality master and
+Short go from `Downloads\TinyLearners\videoNN\` to YouTube (Private) and TikTok (inbox, with the
+gradient 9:16 long form), after one "OK to upload?" per video. Public stays a separate,
+explicit step (`set_youtube_visibility` / `tlm visibility <ID> public`). If the app isn't
+reachable, it falls back to the original Chrome steps.
+
+- **Claude Code on the PC (Remote Control):** available automatically in this repo.
+- **claude.ai / Claude Desktop:** upload the skill folder as a zip under Settings → Capabilities → Skills.
+  The pipeline must run in a session that can use the app's tools (Claude Desktop on the PC).
+
+Helper commands it uses: `tlm draft`, `tlm approve`, `tlm wait`, `tlm visibility`, and
+`--tiktok-format gradient` / `--playlist "<title>"`.
+
 ## Without Claude
 
 ```powershell

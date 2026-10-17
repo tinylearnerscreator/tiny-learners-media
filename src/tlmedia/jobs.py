@@ -129,7 +129,8 @@ def preview(group_id: str, file_report: dict | None = None) -> str:
                    if o.get("publish_at") else ""),
                 f"  Made for kids: {o.get('made_for_kids')}   AI/synthetic disclosure: "
                 f"{o.get('contains_synthetic_media')}   Category: {o.get('youtube_category_id')}",
-                f"  Thumbnail: {o.get('thumbnail') or '-'}   Playlist: {o.get('playlist_id') or '-'}",
+                f"  Thumbnail: {o.get('thumbnail') or '-'}   "
+                f"Playlist: {o.get('playlist_id') or o.get('playlist_name') or '-'}",
             ]
         else:
             mode = o.get("tiktok_mode")
@@ -149,8 +150,8 @@ def preview(group_id: str, file_report: dict | None = None) -> str:
             for m in checks["must_fix"]:
                 lines.append(f"  Will auto-fix: {m}")
             for w in checks["warnings"]:
-                if w.startswith("not vertical") and o.get("tiktok_format") == "vertical":
-                    w = "will be converted to 1080x1920 vertical with a blurred background"
+                if w.startswith("not vertical") and o.get("tiktok_format") in ("vertical", "gradient"):
+                    w = ("will be converted to 1080x1920 vertical (" + o["tiktok_format"] + " background)")
                     lines.append(f"  Will auto-fix: {w}")
                     continue
                 lines.append(f"  Warning: {w}")
@@ -281,9 +282,14 @@ def _run_youtube(job: dict, s: Store, cfg: Config, progress) -> None:
             youtube.set_thumbnail(vid, Path(o["thumbnail"]), tok)
         except Exception as e:
             notes.append(f"thumbnail not set: {e}")
-    if o.get("playlist_id"):
+    playlist = o.get("playlist_id")
+    if not playlist and o.get("playlist_name"):
+        playlist = youtube.find_playlist(o["playlist_name"], tok)
+        if not playlist:
+            notes.append(f"playlist '{o['playlist_name']}' not found")
+    if playlist:
         try:
-            youtube.add_to_playlist(vid, o["playlist_id"], tok)
+            youtube.add_to_playlist(vid, playlist, tok)
         except Exception as e:
             notes.append(f"playlist not updated: {e}")
     status = video.get("status", {})

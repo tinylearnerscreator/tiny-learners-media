@@ -97,6 +97,7 @@ async def draft_post(
     contains_synthetic_media: bool | None = None,
     thumbnail: str | None = None,
     playlist_id: str | None = None,
+    playlist_name: str | None = None,
     youtube_category_id: str | None = None,
     notify_subscribers: bool | None = None,
     tiktok_mode: str | None = None,
@@ -118,19 +119,20 @@ async def draft_post(
       YouTube uses its native scheduler; TikTok is posted by the background worker then.
     youtube_privacy: private | unlisted | public (default from config: private).
     made_for_kids / contains_synthetic_media: YouTube disclosures (defaults true).
-    thumbnail: local .jpg/.png path (<2 MB). playlist_id: YouTube playlist id.
+    thumbnail: local .jpg/.png path (<2 MB). playlist_id: YouTube playlist id, or
+      playlist_name: its title (e.g. "Space for Little Ones").
     tiktok_mode: inbox (draft in TikTok app; default) | direct (needs video.publish).
     tiktok_privacy (direct mode): PUBLIC_TO_EVERYONE | MUTUAL_FOLLOW_FRIENDS | FOLLOWER_OF_CREATOR
       | SELF_ONLY. Unaudited TikTok apps can only use SELF_ONLY.
-    tiktok_format: auto (keep as-is when valid) | vertical (make a 1080x1920 version with a
-      blurred background from a horizontal episode).
+    tiktok_format: auto (keep as-is when valid) | vertical (1080x1920 with a blurred background)
+      | gradient (1080x1920, full frame centered on the channel's blue-purple gradient).
     ai_generated: TikTok AI-generated content label (default true).
     """
     opts: dict[str, Any] = {
         "title": title, "description": description, "tags": tags,
         "tiktok_caption": tiktok_caption, "youtube_privacy": youtube_privacy,
         "made_for_kids": made_for_kids, "contains_synthetic_media": contains_synthetic_media,
-        "thumbnail": thumbnail, "playlist_id": playlist_id,
+        "thumbnail": thumbnail, "playlist_id": playlist_id, "playlist_name": playlist_name,
         "youtube_category_id": youtube_category_id, "notify_subscribers": notify_subscribers,
         "tiktok_mode": tiktok_mode, "tiktok_privacy": tiktok_privacy,
         "tiktok_format": tiktok_format, "ai_generated": ai_generated,
@@ -190,6 +192,15 @@ async def retry_post(post_or_group_id: str) -> dict:
     n = jobs.store().retry(post_or_group_id)
     jobs.kick()
     return {"requeued": n}
+
+
+@mcp.tool()
+async def set_youtube_visibility(video_id: str, privacy: str) -> dict:
+    """Change a YouTube video's visibility: private | unlisted | public. Only set PUBLIC after
+    the user explicitly says so for that video. Fails clearly if YouTube keeps API uploads
+    locked private (unaudited API project); then change it in YouTube Studio instead."""
+    cfg = load_config()
+    return await _bg(lambda: youtube.set_privacy(video_id, privacy, google_token(cfg)))
 
 
 @mcp.tool()

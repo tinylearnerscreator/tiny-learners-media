@@ -8,6 +8,8 @@
   tlm serve                run the MCP server (Claude Desktop starts this)
   tlm worker [--loop]      run due uploads (the scheduled task runs this)
   tlm post FILE ...        post without Claude (shows preview, asks y/N)
+  tlm draft / approve / wait   the same as separate steps
+  tlm visibility ID public     change a YouTube video's visibility
   tlm status [ID]          show recent posts or one post/group
   tlm claude-config        add this server to Claude Desktop's config
 """
@@ -98,6 +100,48 @@ def cmd_post(a):
             break
         time.sleep(10)
     _print([jobs.describe(r) for r in rows])
+
+
+def _post_opts(a) -> dict:
+    return {"title": a.title, "description": a.description, "tags": a.tags,
+            "tiktok_caption": a.caption, "youtube_privacy": a.privacy,
+            "tiktok_mode": a.tiktok_mode, "tiktok_format": a.tiktok_format,
+            "thumbnail": getattr(a, "thumbnail", None),
+            "playlist_name": getattr(a, "playlist", None)}
+
+
+def cmd_draft(a):
+    """Create a draft (uploads nothing) and print its preview and group id."""
+    _print(jobs.create_draft(a.source, a.platforms, _post_opts(a), a.at))
+
+
+def cmd_approve(a):
+    n = jobs.approve(a.id)
+    print(f"Approved {n} post(s) in {a.id}. Run:  tlm wait {a.id}")
+
+
+def cmd_wait(a):
+    """Run an approved group's uploads in the foreground and print the results."""
+    deadline = time.monotonic() + a.timeout * 60
+    while True:
+        jobs.run_due()
+        rows = jobs.store().find(a.id)
+        if not rows:
+            sys.exit(f"Nothing found for {a.id}")
+        if all(r["status"] in ("done", "failed", "cancelled", "draft") or
+               (r["status"] == "queued" and r["run_after"]) for r in rows):
+            break
+        if time.monotonic() > deadline:
+            print("Still running; the background worker will finish it.")
+            break
+        time.sleep(10)
+    _print([jobs.describe(r) for r in rows])
+
+
+def cmd_visibility(a):
+    from . import youtube
+    from .auth import google_token
+    _print(youtube.set_privacy(a.video_id, a.privacy, google_token(load_config())))
 
 
 def cmd_status(a):
@@ -208,9 +252,34 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--caption")
     p.add_argument("--privacy", choices=["private", "unlisted", "public"])
     p.add_argument("--tiktok-mode", choices=["inbox", "direct"])
-    p.add_argument("--tiktok-format", choices=["auto", "vertical"])
+    p.add_argument("--tiktok-format", choices=["auto", "vertical", "gradient"])
     p.add_argument("--at", help="schedule, e.g. 2026-10-18T09:00")
     p.set_defaults(fn=cmd_post)
+    p = sub.add_parser("draft", help="create a draft (no upload) and print its preview")
+    p.add_argument("source")
+    p.add_argument("--platforms", nargs="+", default=["youtube", "tiktok"])
+    p.add_argument("--title", required=True)
+    p.add_argument("--description", default="")
+    p.add_argument("--tags", nargs="*")
+    p.add_argument("--caption")
+    p.add_argument("--privacy", choices=["private", "unlisted", "public"])
+    p.add_argument("--tiktok-mode", choices=["inbox", "direct"])
+    p.add_argument("--tiktok-format", choices=["auto", "vertical", "gradient"])
+    p.add_argument("--thumbnail")
+    p.add_argument("--playlist", help="YouTube playlist title, e.g. 'Space for Little Ones'")
+    p.add_argument("--at", help="schedule, e.g. 2026-10-18T09:00")
+    p.set_defaults(fn=cmd_draft)
+    p = sub.add_parser("approve", help="approve a draft group so it uploads")
+    p.add_argument("id")
+    p.set_defaults(fn=cmd_approve)
+    p = sub.add_parser("wait", help="upload an approved group now and print results")
+    p.add_argument("id")
+    p.add_argument("--timeout", type=int, default=110, help="minutes")
+    p.set_defaults(fn=cmd_wait)
+    p = sub.add_parser("visibility", help="set a YouTube video private/unlisted/public")
+    p.add_argument("video_id")
+    p.add_argument("privacy", choices=["private", "unlisted", "public"])
+    p.set_defaults(fn=cmd_visibility)
     p = sub.add_parser("status")
     p.add_argument("id", nargs="?")
     p.add_argument("--limit", type=int, default=10)

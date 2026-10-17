@@ -148,7 +148,8 @@ def optimize(src: Path, platform: str, tiktok_format: str = "auto",
     """Return (file_to_upload, its_probe, notes). Re-encodes only if needed."""
     info = probe(src)
     result = check(info, platform, max_duration_s)
-    vertical = platform == "tiktok" and tiktok_format == "vertical" and info["orientation"] != "vertical"
+    vertical = (platform == "tiktok" and tiktok_format in ("vertical", "gradient")
+                and info["orientation"] != "vertical")
     if result["ok"] and not vertical:
         return src, info, ["original file uploaded untouched"]
 
@@ -156,7 +157,7 @@ def optimize(src: Path, platform: str, tiktok_format: str = "auto",
         raise ValueError(result["must_fix"][-1] + ". Trim the video or post it to YouTube only.")
 
     key = hashlib.sha1(f"{src.resolve()}|{src.stat().st_size}|{src.stat().st_mtime}|"
-                       f"{platform}|{vertical}".encode()).hexdigest()[:12]
+                       f"{platform}|{vertical and tiktok_format}".encode()).hexdigest()[:12]
     dest = paths().cache / "optimized" / f"{src.stem}.{platform}.{key}.mp4"
     dest.parent.mkdir(parents=True, exist_ok=True)
     notes = [f"re-encoded for {platform}: " + ("; ".join(result["must_fix"]) or "made 9:16 vertical")]
@@ -165,7 +166,16 @@ def optimize(src: Path, platform: str, tiktok_format: str = "auto",
 
     vf = []
     fc = None
-    if vertical:
+    extra_inputs: list[str] = []
+    if vertical and tiktok_format == "gradient":
+        # The channel's TikTok long-form look: full frame centered on a blue-purple gradient.
+        dur = max(info["duration_s"], 0.1) + 1
+        extra_inputs = ["-f", "lavfi", "-i",
+                        "gradients=s=1080x1920:c0=0x1B3A7A:c1=0x6A4CC0:x0=0:y0=0:x1=1080:y1=1920"
+                        f":d={dur:.2f}:r=30"]
+        fc = ("[0:v]scale=1080:-2,fps=30[fg];"
+              "[1:v][fg]overlay=0:(H-h)/2:shortest=1,format=yuv420p[v]")
+    elif vertical:
         fc = ("[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
               "gblur=sigma=30,eq=brightness=-0.08[bg];"
               "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease[fg];"
@@ -180,7 +190,7 @@ def optimize(src: Path, platform: str, tiktok_format: str = "auto",
         vf.append("format=yuv420p")
 
     cmd = [_tool("ffmpeg"), "-y", "-hide_banner", "-loglevel", "error", "-progress", "pipe:1",
-           "-i", str(src)]
+           "-i", str(src), *extra_inputs]
     if fc:
         cmd += ["-filter_complex", fc, "-map", "[v]", "-map", "0:a?"]
     else:

@@ -212,3 +212,37 @@ def list_playlists(token: str) -> list[dict]:
                   headers={"Authorization": f"Bearer {token}"}, timeout=60)
     r.raise_for_status()
     return [{"id": p["id"], "title": p["snippet"]["title"]} for p in r.json().get("items", [])]
+
+
+def find_playlist(name: str, token: str) -> str | None:
+    """Playlist id for a title like 'Space for Little Ones' (case-insensitive)."""
+    want = name.strip().lower()
+    for p in list_playlists(token):
+        if p["title"].strip().lower() == want:
+            return p["id"]
+    return None
+
+
+def set_privacy(video_id: str, privacy: str, token: str) -> dict:
+    """Change visibility (private | unlisted | public) without touching other settings."""
+    if privacy not in ("private", "unlisted", "public"):
+        raise ValueError("privacy must be private, unlisted or public")
+    current = video_status(video_id, token)
+    if not current:
+        raise YouTubeError(f"Video {video_id} not found on this channel")
+    status = {k: v for k, v in current.get("status", {}).items()
+              if k in ("privacyStatus", "embeddable", "license", "publicStatsViewable",
+                       "selfDeclaredMadeForKids", "containsSyntheticMedia", "publishAt")}
+    status["privacyStatus"] = privacy
+    if privacy != "private":
+        status.pop("publishAt", None)
+    r = httpx.put(f"{API}/videos", params={"part": "status"},
+                  json={"id": video_id, "status": status},
+                  headers={"Authorization": f"Bearer {token}"}, timeout=60)
+    if r.status_code != 200:
+        raise YouTubeError(f"Visibility change failed ({r.status_code}): {_reason(r)}")
+    new = r.json().get("status", {}).get("privacyStatus")
+    if new != privacy:
+        raise YouTubeError(f"YouTube kept the video {new}. If the API project is not yet "
+                           "audited, YouTube locks API uploads to private; change it in Studio.")
+    return {"video_id": video_id, "privacy": new}
