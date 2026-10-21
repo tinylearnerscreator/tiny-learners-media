@@ -244,7 +244,7 @@ Customize these placeholders once before rollout:
 **ON-SCREEN TEXT:** *Vendor access: approved, monitored, and turned off when the work is done. Never "just click allow."*
 
 > 🟩 **COMPLIANCE TAG — Scene 6**
-> Reinforces cyber security practices for vendor electronic remote access. Supports policy topic R1.2.7 and CIP-003-9 Attachment 1, Section 6 (methods to determine, disable, and detect malicious communications for vendor electronic remote access). Under CIP-003-11 these provisions move into Section 3; the content stays valid.
+> Reinforces cyber security practices for vendor electronic remote access. Supports policy topic R1.2.6 and CIP-003-9 Attachment 1, Section 6 (methods to determine, disable, and detect malicious communications for vendor electronic remote access). Under CIP-003-11 these provisions move into Attachment 1, Section 3 and the policy topic folds into R1.2.3 (electronic access controls); the content stays valid.
 
 ---
 
@@ -293,7 +293,7 @@ Customize these placeholders once before rollout:
 **ON-SCREEN TEXT:** *Emergencies are declared, not assumed. Security still matters in a storm.*
 
 > 🟩 **COMPLIANCE TAG — Scene 8**
-> Reinforces awareness of the entity's process for declaring and responding to CIP Exceptional Circumstances. Supports policy topic R1.2.6.
+> Reinforces awareness of the entity's process for declaring and responding to CIP Exceptional Circumstances. Supports policy topic R1.2.7 (R1.2.6 under CIP-003-11).
 
 ---
 

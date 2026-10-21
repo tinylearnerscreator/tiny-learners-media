@@ -8,7 +8,7 @@ This document has three parts:
 
 > **Status of standards as of October 2026.** Please confirm against the current NERC "US Effective Date Status" page before each audit.
 > - **CIP-003-9** has been the enforceable low impact standard in the U.S. since **April 1, 2026**.
-> - **CIP-003-11** was approved by FERC in **Order No. 918** (March 2026). It moves the vendor remote access controls into Attachment 1, Section 3 and adds authentication, credential protection, and malicious communications detection. Its effective date is in the future, with the Section 3.1.2 detection obligation not required before April 1, 2029. **It does not change the Section 1 cyber security awareness requirement.**
+> - **CIP-003-11** was approved by FERC in **Order No. 918** (March 2026). It moves the vendor remote access controls into Attachment 1, Section 3 and adds authentication, credential protection, and malicious communications detection. Under NERC's implementation plan it takes effect on the first day of the first calendar quarter 36 months after the approving order's effective date, and the Section 3.1.2 detection obligation isn't required before the later of April 1, 2029 or that effective date. **It does not change the Section 1 cyber security awareness requirement.**
 > - **CIP-004-7 R1** (high and medium impact) requires security awareness reinforcement **at least once each calendar quarter**.
 
 ---
@@ -64,16 +64,18 @@ Auditors often check that the awareness content matches the entity's documented 
 | 1.2.3 Electronic access controls | Section 3 | Scene 4 — "Passwords Are Like Toothbrushes" |
 | 1.2.4 Cyber Security Incident response | Section 4 | Scene 7 — "See Something, Say Something... FAST" |
 | 1.2.5 Transient Cyber Asset and Removable Media malicious code risk mitigation | Section 5 | Scene 5 — "The Free USB Stick" |
-| 1.2.6 Declaring and responding to CIP Exceptional Circumstances | (R1.2.6) | Scene 8 — "Emergencies Don't Erase the Rules" |
-| 1.2.7 Vendor electronic remote access security controls | Section 6 (moves to Section 3 under CIP-003-11) | Scene 6 — "Who Left the Back Door Open?" |
+| 1.2.6 Vendor electronic remote access security controls | Section 6 (moves to Section 3 under CIP-003-11) | Scene 6 — "Who Left the Back Door Open?" |
+| 1.2.7 Declaring and responding to CIP Exceptional Circumstances | (R1 policy topic; no Attachment 1 section) | Scene 8 — "Emergencies Don't Erase the Rules" |
 
 **Result:** every R1.2 policy subject is reinforced at least once.
+
+*Numbering under CIP-003-11:* the list drops to six topics. Vendor remote access is folded into 1.2.3 (electronic access controls), and CIP Exceptional Circumstances becomes 1.2.6. The scenes still cover every topic; only the numbers in this table change.
 
 ### 1D. Forward Compatibility with CIP-003-11
 
 | CIP-003-11 change | Module readiness |
 |---|---|
-| Vendor remote access provisions move from Section 6 into Section 3 | Scene 6 content is unchanged. Only the citation in the compliance tag needs updating. |
+| Vendor remote access provisions move from Section 6 into Section 3, and R1.2 drops from seven topics to six | Scene 6 content is unchanged. Only the citations in the compliance tags and table 1C need renumbering. |
 | Authentication before network access and protection of user authentication information | Scene 4 already reinforces using your own account, never sharing credentials, protecting passwords, and denying unexpected MFA prompts. |
 | Detection of known or suspected malicious inbound and outbound communications | Scenes 6 and 7 reinforce monitoring and fast reporting of suspicious traffic and sessions. |
 | Section 1 awareness requirement | Unchanged; the 15-month cadence remains. |
@@ -183,6 +185,8 @@ Use the end card from Scene 9 as an 11×17 poster with the Gremlin artwork and `
 ---
 
 ## Source References
+
+*Requirement quotations verified against the official NERC PDFs (CIP-003-9, CIP-004-7, the CIP-003-11 redline posted November 2024, and the CIP-003-11 implementation plan) on October 21, 2026.*
 
 - NERC Reliability Standard CIP-003-9, Requirement R1.2 and Attachments 1 and 2
 - NERC CIP-003-9 Technical Rationale (entity discretion over awareness topics and methods)
